@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Мой сайт</title>
+<title>G.maYou7Tb</title>
 <style>
     body {
         background: #f3e6d0;
@@ -68,7 +68,7 @@
 </head>
 <body>
 
-<h1>Мой сайт</h1>
+<h1>G.maYou7Tb</h1>
 
 <div id="posts"></div>
 
@@ -82,22 +82,22 @@
 
 <script>
 /* ----------------------------------------------------
-   ТОЛЬКО ТЫ — СОЗДАТЕЛЬ
+  G.maYou7Tb
    ---------------------------------------------------- */
 
 const OWNER_KEY = "__MY_SITE_OWNER__";
 
-// при первом открытии — создаём ключ ТОЛЬКО у тебя
+// !34!HnK(
 if (!localStorage.getItem(OWNER_KEY)) {
     localStorage.setItem(OWNER_KEY, crypto.randomUUID());
 }
 
-// Только у тебя есть этот ключ ⇒ ты создатель
+// 
 function isOwner() {
     return localStorage.getItem(OWNER_KEY) !== null;
 }
 
-// Сохранён ли режим создателя?
+// 
 let creatorMode = localStorage.getItem("creatorMode") === "1";
 
 function updateInterface() {
@@ -120,9 +120,7 @@ function toggleMode() {
 
 updateInterface();
 
-/* ----------------------------------------------------
-   ПОСТЫ
-   ---------------------------------------------------- */
+/*  */
 
 function addPost() {
     let text = document.getElementById("postText").value;
@@ -173,7 +171,7 @@ function react(id, type) {
     let votes = JSON.parse(localStorage.getItem("votes") || "{}");
     if (votes[id] === type) return;
 
-    // меняем лайк/дизлайк
+    // лайк/дизлайк
     if (type === "like") {
         post.likes++;
         if (votes[id] === "dislike") post.dislikes--;
@@ -228,4 +226,5 @@ renderPosts();
 </script>
 
 </body>
+
 </html>
