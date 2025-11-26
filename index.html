@@ -26,12 +26,11 @@
 
 <!-- Firebase SDK -->
 <script type="module">
-// Вставь сюда твой код Firebase из консоли
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-// Вставь сюда свой firebaseConfig
+// Вставь сюда свой Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAOJwSqrNzMDJe5CuX7ZRtwZy-0gnbIkPQ",
   authDomain: "nevv1you7yb.firebaseapp.com",
@@ -42,15 +41,26 @@ const firebaseConfig = {
   measurementId: "G-NW5NPWMZ8Q"
 };
 
-// --- Инициализация Firebase ---
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const creatorEmail = "maps50876@gmail.com"; // ТОЛЬКО твой email сможет писать
+const creatorEmail = "maps50876@gmail.com"; // Email, который создал в Firebase Auth
 let isAuthor = false;
 
-// --- Авторизация (только ты) ---
+// --- Секретная зона для режима автора ---
+let clicks=0,timer=null;
+document.getElementById("secretZone").addEventListener("click", ()=>{
+  clicks++;
+  if(timer) clearTimeout(timer);
+  timer=setTimeout(()=>{clicks=0; timer=null;},3000);
+  if(clicks>=5){
+    clicks=0;
+    loginCreator();
+  }
+});
+
+// --- Авторизация ---
 async function loginCreator() {
   const password = prompt("Введите пароль для авторизации:");
   try {
@@ -64,18 +74,6 @@ async function loginCreator() {
     alert("Неверный пароль или email");
   }
 }
-
-// --- Секретная зона для активации автора ---
-let clicks=0,timer=null;
-document.getElementById("secretZone").addEventListener("click", ()=>{
-  clicks++;
-  if(timer) clearTimeout(timer);
-  timer=setTimeout(()=>{clicks=0; timer=null;},3000);
-  if(clicks>=5){
-    clicks=0;
-    loginCreator();
-  }
-});
 
 // --- Добавление поста ---
 document.getElementById("addPost").addEventListener("click", async ()=>{
@@ -92,6 +90,22 @@ document.getElementById("addPost").addEventListener("click", async ()=>{
   }
 });
 
+// --- Тестовый пост (если база пуста) ---
+async function addTestPost() {
+  const snapshot = await onSnapshot(collection(db,"posts"), (snap)=>{
+    if(snap.empty){
+      setDoc(doc(db,"posts","testPost"),{
+        text:"Привет! Это тестовый пост.",
+        created:Date.now(),
+        edited:false,
+        likes:0,
+        dislikes:0
+      });
+    }
+  });
+}
+addTestPost();
+
 // --- Отображение постов в реальном времени ---
 const postsDiv = document.getElementById("posts");
 onSnapshot(collection(db,"posts"), (snapshot)=>{
@@ -105,11 +119,9 @@ onSnapshot(collection(db,"posts"), (snapshot)=>{
       <span class="like">👍 ${data.likes||0}</span>
       <span class="dislike">👎 ${data.dislikes||0}</span>
     `;
-    // Лайк
     postEl.querySelector(".like").addEventListener("click", async ()=>{
       await updateDoc(doc(db,"posts",docSnap.id),{likes:(data.likes||0)+1});
     });
-    // Дизлайк
     postEl.querySelector(".dislike").addEventListener("click", async ()=>{
       await updateDoc(doc(db,"posts",docSnap.id),{dislikes:(data.dislikes||0)+1});
     });
