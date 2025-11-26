@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <title>Мой сайт</title>
 <style>
-  body { background: #f5f0e1; font-family: Arial, sans-serif; margin:0; padding:0;}
-  #editor { display:none; padding:10px; background:#fff3e0; margin:10px; border-radius:5px; }
-  #posts { margin:10px; }
-  .post { background:#fff; padding:8px; margin-bottom:6px; border-radius:4px; position:relative;}
+  body { background: #f5f0e1; font-family: Arial, sans-serif; margin:0; padding:10px;}
+  #editor { display:none; padding:10px; background:#fff3e0; margin-bottom:10px; border-radius:5px; }
+  #editor textarea { width:100%; resize:none; }
+  #posts { margin:0; }
+  .post { background:#fff; padding:6px 8px; margin-bottom:6px; border-radius:4px; position:relative; line-height:1.2; }
   .edited { opacity:0.6; font-size:12px; position:absolute; right:5px; top:5px; }
-  .like, .dislike { cursor:pointer; margin-left:5px; }
+  .like, .dislike { cursor:pointer; margin-left:5px; font-size:14px; user-select:none; }
   #secretZone { position:fixed; width:20px; height:20px; right:5px; top:5px; opacity:0; z-index:9999; }
 </style>
 </head>
@@ -18,19 +19,18 @@
 <div id="secretZone"></div>
 
 <div id="editor">
-  <textarea id="newPost" rows="3" style="width:100%;"></textarea>
+  <textarea id="newPost" rows="3" placeholder="Напиши пост..."></textarea>
   <button id="addPost">Опубликовать</button>
 </div>
 
 <div id="posts"></div>
 
-<!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-// Вставь сюда свой Firebase config
+// --- Твой Firebase конфиг ---
 const firebaseConfig = {
   apiKey: "AIzaSyAOJwSqrNzMDJe5CuX7ZRtwZy-0gnbIkPQ",
   authDomain: "nevv1you7yb.firebaseapp.com",
@@ -45,7 +45,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const creatorEmail = "maps50876@gmail.com"; // Email, который создал в Firebase Auth
+const creatorEmail = "maps50876@gmail.com"; // Только твой email может писать
 let isAuthor = false;
 
 // --- Секретная зона для режима автора ---
@@ -90,28 +90,13 @@ document.getElementById("addPost").addEventListener("click", async ()=>{
   }
 });
 
-// --- Тестовый пост (если база пуста) ---
-async function addTestPost() {
-  const snapshot = await onSnapshot(collection(db,"posts"), (snap)=>{
-    if(snap.empty){
-      setDoc(doc(db,"posts","testPost"),{
-        text:"Привет! Это тестовый пост.",
-        created:Date.now(),
-        edited:false,
-        likes:0,
-        dislikes:0
-      });
-    }
-  });
-}
-addTestPost();
-
-// --- Отображение постов в реальном времени ---
+// --- Отображение постов ---
 const postsDiv = document.getElementById("posts");
 onSnapshot(collection(db,"posts"), (snapshot)=>{
   postsDiv.innerHTML="";
   snapshot.docs.sort((a,b)=>b.data().created - a.data().created).forEach(docSnap=>{
     const data = docSnap.data();
+    const postId = docSnap.id;
     const postEl = document.createElement("div");
     postEl.className="post";
     postEl.innerHTML=`<div>${data.text}</div>
@@ -119,12 +104,25 @@ onSnapshot(collection(db,"posts"), (snapshot)=>{
       <span class="like">👍 ${data.likes||0}</span>
       <span class="dislike">👎 ${data.dislikes||0}</span>
     `;
+
+    // --- Лайки/дизлайки один раз на устройство ---
+    const likedKey = 'liked_'+postId;
+    const dislikedKey = 'disliked_'+postId;
+
     postEl.querySelector(".like").addEventListener("click", async ()=>{
-      await updateDoc(doc(db,"posts",docSnap.id),{likes:(data.likes||0)+1});
+      if(!localStorage.getItem(likedKey)){
+        await updateDoc(doc(db,"posts",postId),{likes:(data.likes||0)+1});
+        localStorage.setItem(likedKey,'1');
+      }
     });
+
     postEl.querySelector(".dislike").addEventListener("click", async ()=>{
-      await updateDoc(doc(db,"posts",docSnap.id),{dislikes:(data.dislikes||0)+1});
+      if(!localStorage.getItem(dislikedKey)){
+        await updateDoc(doc(db,"posts",postId),{dislikes:(data.dislikes||0)+1});
+        localStorage.setItem(dislikedKey,'1');
+      }
     });
+
     postsDiv.appendChild(postEl);
   });
 });
