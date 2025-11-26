@@ -2,229 +2,120 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>G.maYou7Tb</title>
+<title>Мой сайт</title>
 <style>
-    body {
-        background: #f3e6d0;
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        color: #5a4633;
-    }
-    h1 {
-        text-align: center;
-        color: #5a4633;
-    }
-    .post {
-        background: #fff7ea;
-        padding: 15px;
-        margin-bottom: 15px;
-        border-radius: 12px;
-        border: 1px solid #dec7a8;
-        position: relative;
-    }
-    .edited {
-        position: absolute;
-        top: 5px;
-        right: 10px;
-        font-size: 12px;
-        opacity: 0.5;
-    }
-    #editorPanel {
-        display: none;
-        margin-bottom: 20px;
-        background: #fff0d9;
-        padding: 15px;
-        border-radius: 12px;
-        border: 1px solid #d9c1a3;
-    }
-    .btn {
-        padding: 8px 12px;
-        background: #d5b893;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        margin-top: 5px;
-    }
-    .reaction {
-        margin-top: 10px;
-        font-size: 15px;
-    }
-    .reaction span {
-        cursor: pointer;
-        margin-right: 20px;
-        user-select: none;
-    }
-    #modeBtn {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #d5b893;
-        padding: 10px 15px;
-        border-radius: 10px;
-        cursor: pointer;
-        border: none;
-    }
+  body { background: #f5f0e1; font-family: Arial, sans-serif; margin:0; padding:0;}
+  #editor { display:none; padding:10px; background:#fff3e0; margin:10px; border-radius:5px; }
+  #posts { margin:10px; }
+  .post { background:#fff; padding:8px; margin-bottom:6px; border-radius:4px; position:relative;}
+  .edited { opacity:0.6; font-size:12px; position:absolute; right:5px; top:5px; }
+  .like, .dislike { cursor:pointer; margin-left:5px; }
+  #secretZone { position:fixed; width:20px; height:20px; right:5px; top:5px; opacity:0; z-index:9999; }
 </style>
 </head>
 <body>
 
-<h1>G.maYou7Tb</h1>
+<div id="secretZone"></div>
+
+<div id="editor">
+  <textarea id="newPost" rows="3" style="width:100%;"></textarea>
+  <button id="addPost">Опубликовать</button>
+</div>
 
 <div id="posts"></div>
 
-<div id="editorPanel">
-    <textarea id="postText" cols="40" rows="5" placeholder="Текст..."></textarea><br>
-    <input type="datetime-local" id="postTime"><br>
-    <button class="btn" onclick="addPost()">Добавить запись</button>
-</div>
+<!-- Firebase SDK -->
+<script type="module">
+// Вставь сюда твой код Firebase из консоли
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-<button id="modeBtn" onclick="toggleMode()">Зритель</button>
+// Вставь сюда свой firebaseConfig
+const firebaseConfig = {
+  apiKey: "AIzaSyAOJwSqrNzMDJe5CuX7ZRtwZy-0gnbIkPQ",
+  authDomain: "nevv1you7yb.firebaseapp.com",
+  projectId: "nevv1you7yb",
+  storageBucket: "nevv1you7yb.firebasestorage.app",
+  messagingSenderId: "378007403400",
+  appId: "1:378007403400:web:004fc218eb0c57cac4583d",
+  measurementId: "G-NW5NPWMZ8Q"
+};
 
-<script>
-/* ----------------------------------------------------
-  G.maYou7Tb
-   ---------------------------------------------------- */
+// --- Инициализация Firebase ---
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-const OWNER_KEY = "__MY_SITE_OWNER__";
+const creatorEmail = "maps50876@gmail.com"; // ТОЛЬКО твой email сможет писать
+let isAuthor = false;
 
-// !34!HnK(
-if (!localStorage.getItem(OWNER_KEY)) {
-    localStorage.setItem(OWNER_KEY, crypto.randomUUID());
-}
-
-// 
-function isOwner() {
-    return localStorage.getItem(OWNER_KEY) !== null;
-}
-
-// 
-let creatorMode = localStorage.getItem("creatorMode") === "1";
-
-function updateInterface() {
-    if (isOwner() && creatorMode) {
-        document.getElementById("editorPanel").style.display = "block";
-        document.getElementById("modeBtn").innerText = "Создатель";
-    } else {
-        document.getElementById("editorPanel").style.display = "none";
-        document.getElementById("modeBtn").innerText = "Зритель";
+// --- Авторизация (только ты) ---
+async function loginCreator() {
+  const password = prompt("Введите пароль для авторизации:");
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, creatorEmail, password);
+    if(userCredential.user.email === creatorEmail){
+      isAuthor = true;
+      document.getElementById("editor").style.display = "block";
+      alert("Режим автора включён!");
     }
+  } catch(e) {
+    alert("Неверный пароль или email");
+  }
 }
 
-function toggleMode() {
-    if (!isOwner()) return;
-    creatorMode = !creatorMode;
-    localStorage.setItem("creatorMode", creatorMode ? "1" : "0");
-    updateInterface();
-    renderPosts();
-}
+// --- Секретная зона для активации автора ---
+let clicks=0,timer=null;
+document.getElementById("secretZone").addEventListener("click", ()=>{
+  clicks++;
+  if(timer) clearTimeout(timer);
+  timer=setTimeout(()=>{clicks=0; timer=null;},3000);
+  if(clicks>=5){
+    clicks=0;
+    loginCreator();
+  }
+});
 
-updateInterface();
-
-/*  */
-
-function addPost() {
-    let text = document.getElementById("postText").value;
-    let time = document.getElementById("postTime").value;
-
-    if (!text.trim()) return;
-
-    let id = Date.now();
-    let timeStr = time ? new Date(time).toLocaleString() : new Date().toLocaleString();
-
-    let post = {
-        id: id,
-        text: text,
-        time: timeStr,
-        edited: false,
-        likes: 0,
-        dislikes: 0
-    };
-
-    let posts = JSON.parse(localStorage.getItem("posts") || "[]");
-    posts.unshift(post);
-    localStorage.setItem("posts", JSON.stringify(posts));
-
-    document.getElementById("postText").value = "";
-    renderPosts();
-}
-
-function editPost(id) {
-    if (!(isOwner() && creatorMode)) return;
-
-    let posts = JSON.parse(localStorage.getItem("posts") || "[]");
-    let post = posts.find(p => p.id === id);
-
-    let newText = prompt("Изменить текст:", post.text);
-    if (newText === null) return;
-
-    post.text = newText;
-    post.edited = true;
-
-    localStorage.setItem("posts", JSON.stringify(posts));
-    renderPosts();
-}
-
-function react(id, type) {
-    let posts = JSON.parse(localStorage.getItem("posts") || "[]");
-    let post = posts.find(p => p.id === id);
-
-    let votes = JSON.parse(localStorage.getItem("votes") || "{}");
-    if (votes[id] === type) return;
-
-    // лайк/дизлайк
-    if (type === "like") {
-        post.likes++;
-        if (votes[id] === "dislike") post.dislikes--;
-    } else {
-        post.dislikes++;
-        if (votes[id] === "like") post.likes--;
-    }
-
-    votes[id] = type;
-
-    localStorage.setItem("votes", JSON.stringify(votes));
-    localStorage.setItem("posts", JSON.stringify(posts));
-
-    renderPosts();
-}
-
-function renderPosts() {
-    let posts = JSON.parse(localStorage.getItem("posts") || "[]");
-    let box = document.getElementById("posts");
-    box.innerHTML = "";
-
-    posts.forEach(p => {
-        let div = document.createElement("div");
-        div.className = "post";
-
-        let html = `
-            <b>${p.time}</b><br><br>
-            ${p.text.replace(/\n/g, "<br>")}
-        `;
-
-        if (p.edited) {
-            html += `<div class="edited">Изменено</div>`;
-        }
-
-        if (isOwner() && creatorMode) {
-            html += `<br><button class="btn" onclick="editPost(${p.id})">Редактировать</button>`;
-        }
-
-        html += `
-            <div class="reaction">
-                <span onclick="react(${p.id}, 'like')">👍 ${p.likes}</span>
-                <span onclick="react(${p.id}, 'dislike')">👎 ${p.dislikes}</span>
-            </div>
-        `;
-
-        div.innerHTML = html;
-        box.appendChild(div);
+// --- Добавление поста ---
+document.getElementById("addPost").addEventListener("click", async ()=>{
+  const text = document.getElementById("newPost").value.trim();
+  if(text && isAuthor){
+    await addDoc(collection(db,"posts"),{
+      text:text,
+      created:Date.now(),
+      edited:false,
+      likes:0,
+      dislikes:0
     });
-}
+    document.getElementById("newPost").value="";
+  }
+});
 
-renderPosts();
+// --- Отображение постов в реальном времени ---
+const postsDiv = document.getElementById("posts");
+onSnapshot(collection(db,"posts"), (snapshot)=>{
+  postsDiv.innerHTML="";
+  snapshot.docs.sort((a,b)=>b.data().created - a.data().created).forEach(docSnap=>{
+    const data = docSnap.data();
+    const postEl = document.createElement("div");
+    postEl.className="post";
+    postEl.innerHTML=`<div>${data.text}</div>
+      ${data.edited ? '<div class="edited">Изменено</div>':""}
+      <span class="like">👍 ${data.likes||0}</span>
+      <span class="dislike">👎 ${data.dislikes||0}</span>
+    `;
+    // Лайк
+    postEl.querySelector(".like").addEventListener("click", async ()=>{
+      await updateDoc(doc(db,"posts",docSnap.id),{likes:(data.likes||0)+1});
+    });
+    // Дизлайк
+    postEl.querySelector(".dislike").addEventListener("click", async ()=>{
+      await updateDoc(doc(db,"posts",docSnap.id),{dislikes:(data.dislikes||0)+1});
+    });
+    postsDiv.appendChild(postEl);
+  });
+});
 </script>
-
 </body>
-
 </html>
