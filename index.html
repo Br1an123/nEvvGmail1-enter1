@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Мой сайт</title>
+<title> You7Tb</title>
 <style>
 body {
   background: #f5f0e1;
@@ -93,7 +93,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
 import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-// --- Firebase конфиг ---
+// --- Firebase ---
 const firebaseConfig = {
   apiKey: "AIzaSyAOJwSqrNzMDJe5CuX7ZRtwZy-0gnbIkPQ",
   authDomain: "nevv1you7yb.firebaseapp.com",
@@ -171,7 +171,7 @@ onSnapshot(collection(db,"posts"), snapshot => {
       ${isAuthor ? '<span class="editBtn">✏️</span><span class="timeBtn">🕒</span><span class="deleteBtn">🗑️</span>' : ''}
     `;
 
-    // --- Лайк / дизлайк (1 раз на пост)
+    // --- Лайк / дизлайк 
     postEl.querySelector(".like").addEventListener("click", async ()=>{
       let vote = JSON.parse(localStorage.getItem(postId)) || 'none';
       if(vote === 'like'){
@@ -237,3 +237,4 @@ onSnapshot(collection(db,"posts"), snapshot => {
 
 </body>
 </html>
+
